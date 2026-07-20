@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OAuth callback — Travel Poster</title>
+<style>
+body{font-family:system-ui,-apple-system,sans-serif;max-width:680px;margin:60px auto;padding:0 24px;line-height:1.6;color:#0d3b4d}
+code{background:#eef4f7;padding:2px 6px;border-radius:4px;word-break:break-all}
+#box{background:#eef4f7;border:1px solid #cfe0e8;border-radius:8px;padding:16px;margin:16px 0;word-break:break-all;font-family:ui-monospace,monospace;font-size:14px}
+button{background:#0d3b4d;color:#fff;border:0;border-radius:6px;padding:10px 18px;font-size:15px;cursor:pointer}
+.err{color:#b3261e}
+</style>
+</head><body>
+<h1>Mã uỷ quyền TikTok</h1>
+<div id="out"></div>
+<script>
+  var p = new URLSearchParams(location.search);
+  var code = p.get('code'), err = p.get('error'), out = document.getElementById('out');
+  if (err) {
+    out.innerHTML = '<p class="err">Lỗi: ' + err + ' — ' +
+      (p.get('error_description') || '') + '</p>';
+  } else if (code) {
+    out.innerHTML =
+      '<p>Copy mã dưới đây và dán vào n8n. Mã chỉ dùng được <strong>một lần</strong> ' +
+      'và hết hạn sau vài phút.</p>' +
+      '<div id="box">' + code + '</div>' +
+      '<button onclick="navigator.clipboard.writeText(' + JSON.stringify(code) + ');' +
+      'this.textContent=\'Đã copy\'">Copy mã</button>';
+  } else {
+    out.innerHTML = '<p>Trang này nhận mã uỷ quyền sau khi bạn cho phép ứng dụng ' +
+      'trên TikTok. Mở trực tiếp sẽ không thấy gì.</p>';
+  }
+</script>
+</body></html>
