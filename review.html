@@ -19,6 +19,7 @@
   .strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
   .strip img{height:260px;border-radius:10px;flex:0 0 auto;background:#0a1119}
   .hint{margin-top:10px;font-size:13px;color:#ffd84d}
+  .cap{margin-top:10px;font-size:14px;line-height:1.5;white-space:pre-wrap;background:#0a1119;padding:10px 12px;border-radius:8px}
   .empty{color:#8aa0b4;text-align:center;padding:60px 20px;line-height:1.6}
   a.slug{color:#5fb3d4;font-size:12px;text-decoration:none}
 </style></head><body>
@@ -36,19 +37,22 @@ async function load(){
     if(!r.ok) throw 0;
     const data = await r.json();
     if(!data.length){ app.innerHTML = '<div class="empty">Chưa có ảnh nào.<br>Thêm dòng status=<b>ai</b> trong Sheet rồi bấm nút Gen ảnh.</div>'; return; }
-    app.innerHTML = data.map(p => `
+    app.innerHTML = data.map((p,idx) => `
       <div class="post">
-        <h2>${esc(p.dia_danh||'')}</h2>
-        <div class="sub">${esc(p.phu_de||'')} · dòng ${p.sheet_row||'?'}</div>
+        <h2>${esc(p.dia_danh||'')} ${p.posted?'<span style="color:#4ade80;font-size:13px">· đã đăng</span>':''}</h2>
+        <div class="sub">${esc(p.phu_de||'')}${p.sheet_row?(' · dòng '+p.sheet_row):''}</div>
         <div class="strip">${(p.images||[]).map(u=>`<img loading="lazy" src="${u}">`).join('')}</div>
-        <div class="hint">Ưng → mở Google Sheets, đổi status dòng ${p.sheet_row} thành <b>ready</b> để đăng.<br>
-        Không ưng → đổi lại <b>ai</b> để gen ảnh mới.</div>
+        ${p.caption?`<div class="cap" id="cap${idx}">${esc(p.caption)}</div>
+          <button onclick="copyCap(${idx})">📋 Copy caption để dán vào TikTok</button>`:''}
+        ${!p.posted?`<div class="hint">Ưng → Google Sheets đổi status dòng ${p.sheet_row} thành <b>ready</b> để đăng.<br>
+        Không ưng → đổi lại <b>ai</b> để gen ảnh mới.</div>`:''}
       </div>`).join('');
   }catch(e){
     app.innerHTML = '<div class="empty">Chưa có dữ liệu (chưa gen bài nào), hoặc mạng lỗi.</div>';
   }
 }
 function esc(s){return (s+'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function copyCap(i){const t=document.getElementById('cap'+i).innerText;navigator.clipboard.writeText(t).then(()=>{event.target.textContent='✅ Đã copy!'})}
 load();
 </script>
 </body></html>
