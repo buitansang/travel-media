@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="vi"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gallery duyệt ảnh — Travel Poster</title>
+<style>
+  :root{color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,system-ui,sans-serif;background:#0d1520;color:#e8eef4;
+       -webkit-text-size-adjust:100%}
+  header{position:sticky;top:0;background:#0d1520ee;backdrop-filter:blur(8px);
+         padding:16px 18px;border-bottom:1px solid #1e2c3c;display:flex;align-items:center;gap:12px}
+  header h1{font-size:17px;margin:0;flex:1}
+  button{background:#12556f;color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:14px;font-weight:600}
+  .wrap{padding:14px}
+  .post{background:#131f2e;border:1px solid #1e2c3c;border-radius:14px;padding:14px;margin-bottom:16px}
+  .post h2{margin:0 0 2px;font-size:18px}
+  .post .sub{color:#8aa0b4;font-size:13px;margin-bottom:10px}
+  .strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+  .strip img{height:260px;border-radius:10px;flex:0 0 auto;background:#0a1119}
+  .hint{margin-top:10px;font-size:13px;color:#ffd84d}
+  .empty{color:#8aa0b4;text-align:center;padding:60px 20px;line-height:1.6}
+  a.slug{color:#5fb3d4;font-size:12px;text-decoration:none}
+</style></head><body>
+<header>
+  <h1>🎨 Ảnh AI chờ duyệt</h1>
+  <button onclick="load()">Tải lại</button>
+</header>
+<div class="wrap" id="app"><div class="empty">Đang tải…</div></div>
+<script>
+async function load(){
+  const app = document.getElementById('app');
+  app.innerHTML = '<div class="empty">Đang tải…</div>';
+  try{
+    const r = await fetch('review/manifest.json?t=' + Date.now(), {cache:'no-store'});
+    if(!r.ok) throw 0;
+    const data = await r.json();
+    if(!data.length){ app.innerHTML = '<div class="empty">Chưa có ảnh nào.<br>Thêm dòng status=<b>ai</b> trong Sheet rồi bấm nút Gen ảnh.</div>'; return; }
+    app.innerHTML = data.map(p => `
+      <div class="post">
+        <h2>${esc(p.dia_danh||'')}</h2>
+        <div class="sub">${esc(p.phu_de||'')} · dòng ${p.sheet_row||'?'}</div>
+        <div class="strip">${(p.images||[]).map(u=>`<img loading="lazy" src="${u}">`).join('')}</div>
+        <div class="hint">Ưng → mở Google Sheets, đổi status dòng ${p.sheet_row} thành <b>ready</b> để đăng.<br>
+        Không ưng → đổi lại <b>ai</b> để gen ảnh mới.</div>
+      </div>`).join('');
+  }catch(e){
+    app.innerHTML = '<div class="empty">Chưa có dữ liệu (chưa gen bài nào), hoặc mạng lỗi.</div>';
+  }
+}
+function esc(s){return (s+'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+load();
+</script>
+</body></html>
