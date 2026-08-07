@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="vi"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Xem trước carousel — Simo</title>
+<style>
+  :root{color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b1119;color:#e8eef4;
+       font-family:-apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",sans-serif;
+       -webkit-text-size-adjust:100%}
+  header{position:sticky;top:0;z-index:20;background:#0b1119f2;backdrop-filter:blur(10px);
+         border-bottom:1px solid #1c2836;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))}
+  .hrow{display:flex;align-items:center;gap:10px}
+  select{flex:1;min-width:0;background:#16222f;color:#e8eef4;
+         border:1px solid #233242;border-radius:9px;padding:9px 10px;font-size:14px;
+         font-family:inherit;-webkit-appearance:none;appearance:none}
+  h1{margin:9px 0 0;font-size:15px;font-weight:600;line-height:1.42;color:#cfe0ee}
+  .meta{margin-top:5px;font-size:12px;color:#7f97ab}
+  .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4ade80;
+       margin-right:5px;vertical-align:1px}
+
+  /* ----- carousel: cuon ngang, snap tung tam - dung nhu vuot tren TikTok ----- */
+  .rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;
+        padding:16px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .rail::-webkit-scrollbar{display:none}
+  .slide{flex:0 0 auto;scroll-snap-align:center;position:relative}
+  .slide img{display:block;width:min(78vw,340px);aspect-ratio:9/16;object-fit:cover;
+             border-radius:14px;background:#131e2a;box-shadow:0 8px 28px #0006}
+  .num{position:absolute;top:10px;left:10px;background:#0b1119cc;backdrop-filter:blur(4px);
+       font-size:12px;font-weight:700;padding:4px 9px;border-radius:20px;letter-spacing:.4px}
+  .num.cover{background:#b4832bdd}
+  .num.cta{background:#12556fdd}
+
+  .bar{display:flex;gap:5px;justify-content:center;padding:0 16px 14px}
+  .bar i{height:3px;flex:1;max-width:34px;border-radius:2px;background:#243444;transition:background .2s}
+  .bar i.on{background:#5fb3d4}
+
+  .wrap{padding:0 16px 40px;max-width:680px;margin:0 auto}
+  .card{background:#111c28;border:1px solid #1e2c3c;border-radius:13px;padding:14px;margin-bottom:14px}
+  .card h2{margin:0 0 9px;font-size:13px;font-weight:700;color:#8fb0c8;
+           text-transform:uppercase;letter-spacing:.7px}
+  .cap{font-size:14px;line-height:1.62;white-space:pre-wrap;word-break:break-word;color:#dbe6f0}
+  button{background:#12556f;color:#fff;border:0;border-radius:9px;padding:10px 15px;
+         font-size:14px;font-weight:600;font-family:inherit;margin-top:11px}
+  button:active{background:#0e4459}
+  .pts{list-style:none;margin:0;padding:0;font-size:13.5px;line-height:1.5}
+  .pts li{padding:8px 0;border-top:1px solid #1a2733;display:flex;gap:10px}
+  .pts li:first-child{border-top:0}
+  .pts b{color:#7f97ab;font-weight:600;flex:0 0 20px}
+  .empty{color:#7f97ab;text-align:center;padding:70px 20px;line-height:1.7}
+</style></head><body>
+
+<header>
+  <div class="hrow"><select id="pick" onchange="show(this.value)"></select></div>
+  <h1 id="title">Đang tải…</h1>
+  <div class="meta" id="meta"></div>
+</header>
+
+<div class="rail" id="rail"></div>
+<div class="bar" id="bar"></div>
+
+<div class="wrap">
+  <div class="card">
+    <h2>Caption</h2>
+    <div class="cap" id="cap"></div>
+    <button onclick="copyCap()" id="cpbtn">Copy caption</button>
+  </div>
+  <div class="card">
+    <h2>Chữ trên từng tấm</h2>
+    <ul class="pts" id="pts"></ul>
+  </div>
+</div>
+
+<script>
+var DATA = [], cur = null;
+
+function esc(s){ return String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function show(slug){
+  var p = DATA.find(function(x){ return x.slug === slug; });
+  if(!p) return;
+  cur = p;
+  document.getElementById('pick').value = slug;
+  document.getElementById('title').textContent = p.title || p.slug;
+
+  var imgs = p.images || [];
+  document.getElementById('meta').innerHTML =
+    (p.posted ? '<span class="dot"></span>đã vào draft · ' : '') + imgs.length + ' tấm';
+
+  // Cot 'dia_danh' trong manifest la ten tung tam noi bang '|' - tam 1 la bia,
+  // tam cuoi la CTA, o giua moi la dia diem that.
+  var names = String(p.dia_danh || '').split('|').map(function(s){ return s.trim(); });
+  var subs  = String(p.phu_de   || '').split('|').map(function(s){ return s.trim(); });
+
+  document.getElementById('rail').innerHTML = imgs.map(function(u, i){
+    var kind = i === 0 ? 'cover' : (i === imgs.length - 1 ? 'cta' : '');
+    var tag  = i === 0 ? 'BÌA' : (i === imgs.length - 1 ? 'CTA' : (i + 1));
+    return '<div class="slide"><span class="num ' + kind + '">' + tag + '</span>' +
+           '<img loading="lazy" src="' + esc(u) + '"></div>';
+  }).join('');
+
+  document.getElementById('bar').innerHTML =
+    imgs.map(function(_, i){ return '<i' + (i === 0 ? ' class="on"' : '') + '></i>'; }).join('');
+
+  document.getElementById('cap').textContent = p.caption || '(không có caption)';
+
+  document.getElementById('pts').innerHTML = imgs.map(function(_, i){
+    var lines = (subs[i] || '').split('\n').filter(function(s){ return s.trim(); });
+    return '<li><b>' + (i + 1) + '</b><span><strong>' + esc(names[i] || '—') + '</strong>' +
+           (lines.length ? '<br>' + lines.map(esc).join('<br>') : '') + '</span></li>';
+  }).join('');
+
+  document.getElementById('rail').scrollLeft = 0;
+}
+
+// Cham sang tam nao thi to cham do - dung IntersectionObserver de khong phai
+// tinh toan lai vi tri moi lan cuon.
+var rail = document.getElementById('rail');
+rail.addEventListener('scroll', function(){
+  var slides = rail.querySelectorAll('.slide');
+  if(!slides.length) return;
+  var mid = rail.scrollLeft + rail.clientWidth / 2, best = 0, bd = 1e9;
+  slides.forEach(function(s, i){
+    var c = s.offsetLeft + s.offsetWidth / 2, d = Math.abs(c - mid);
+    if(d < bd){ bd = d; best = i; }
+  });
+  var dots = document.getElementById('bar').children;
+  for(var i = 0; i < dots.length; i++) dots[i].className = (i === best ? 'on' : '');
+}, {passive:true});
+
+function copyCap(){
+  if(!cur) return;
+  var b = document.getElementById('cpbtn');
+  navigator.clipboard.writeText(cur.caption || '').then(function(){
+    b.textContent = 'Đã copy ✓';
+    setTimeout(function(){ b.textContent = 'Copy caption'; }, 1600);
+  });
+}
+
+fetch('review/manifest.json?t=' + Date.now(), {cache:'no-store'})
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    DATA = d || [];
+    if(!DATA.length){
+      document.body.innerHTML = '<div class="empty">Chưa có bài nào trong manifest.</div>';
+      return;
+    }
+    document.getElementById('pick').innerHTML = DATA.map(function(p){
+      return '<option value="' + esc(p.slug) + '">' + esc(p.title || p.slug) + '</option>';
+    }).join('');
+    // ?slug=... de mo dung mot bai; khong co thi lay bai moi nhat (dau mang).
+    var want = new URLSearchParams(location.search).get('slug');
+    show(DATA.some(function(p){ return p.slug === want; }) ? want : DATA[0].slug);
+  })
+  .catch(function(){
+    document.body.innerHTML = '<div class="empty">Không đọc được review/manifest.json.</div>';
+  });
+</script>
+</body></html>
