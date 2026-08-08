@@ -82,7 +82,7 @@ function show(slug){
   var p = DATA.find(function(x){ return x.slug === slug; });
   if(!p) return;
   cur = p;
-  document.getElementById('pick').value = slug;
+  var _pick = document.getElementById('pick'); if(_pick) _pick.value = slug;
   document.getElementById('title').textContent = p.title || p.slug;
 
   var imgs = p.images || [];
