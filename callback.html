@@ -7,7 +7,9 @@ body{font-family:system-ui,-apple-system,sans-serif;max-width:680px;margin:60px 
 code{background:#eef4f7;padding:2px 6px;border-radius:4px;word-break:break-all}
 #box{background:#eef4f7;border:1px solid #cfe0e8;border-radius:8px;padding:16px;margin:16px 0;word-break:break-all;font-family:ui-monospace,monospace;font-size:14px}
 button{background:#0d3b4d;color:#fff;border:0;border-radius:6px;padding:10px 18px;font-size:15px;cursor:pointer}
+button:disabled{background:#3d7a91}
 .err{color:#b3261e}
+.hint{color:#5b7c8a;font-size:14px}
 </style>
 </head><body>
 <h1>Mã uỷ quyền TikTok</h1>
@@ -15,19 +17,68 @@ button{background:#0d3b4d;color:#fff;border:0;border-radius:6px;padding:10px 18p
 <script>
   var p = new URLSearchParams(location.search);
   var code = p.get('code'), err = p.get('error'), out = document.getElementById('out');
+
   if (err) {
-    out.innerHTML = '<p class="err">Lỗi: ' + err + ' — ' +
-      (p.get('error_description') || '') + '</p>';
+    var e = document.createElement('p');
+    e.className = 'err';
+    e.textContent = 'Lỗi: ' + err + ' — ' + (p.get('error_description') || '');
+    out.appendChild(e);
+
   } else if (code) {
-    out.innerHTML =
-      '<p>Copy mã dưới đây và dán vào n8n. Mã chỉ dùng được <strong>một lần</strong> ' +
-      'và hết hạn sau vài phút.</p>' +
-      '<div id="box">' + code + '</div>' +
-      '<button onclick="navigator.clipboard.writeText(' + JSON.stringify(code) + ');' +
-      'this.textContent=\'Đã copy\'">Copy mã</button>';
+    var intro = document.createElement('p');
+    intro.textContent = 'Ứng dụng đã được uỷ quyền. Copy mã dưới đây để đổi lấy ' +
+      'access token. Mã chỉ dùng được một lần và hết hạn sau vài phút.';
+    out.appendChild(intro);
+
+    var box = document.createElement('div');
+    box.id = 'box';
+    box.textContent = code;               // textContent: khong the vo tinh chen HTML
+    out.appendChild(box);
+
+    // Gan handler bang addEventListener thay vi thuoc tinh onclick.
+    // Ban cu dung JSON.stringify(code) NGAY TRONG onclick="..." - ma
+    // JSON.stringify tra ve chuoi CO NHAY KEP, lam dut luon thuoc tinh,
+    // onclick thanh JS cut va bam khong chay gi ca.
+    var btn = document.createElement('button');
+    btn.textContent = 'Copy mã';
+    btn.addEventListener('click', function () {
+      function xong() {
+        btn.textContent = 'Đã copy ✓';
+        btn.disabled = true;
+        setTimeout(function () {
+          btn.textContent = 'Copy mã';
+          btn.disabled = false;
+        }, 2000);
+      }
+      // navigator.clipboard khong ton tai o trang khong bao mat, va co the
+      // bi tu choi quyen -> luon co duong lui boi den doan chu cho user tu copy.
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(xong, boiDen);
+      } else {
+        boiDen();
+      }
+    });
+    out.appendChild(btn);
+
+    function boiDen() {
+      var r = document.createRange();
+      r.selectNodeContents(box);
+      var s = window.getSelection();
+      s.removeAllRanges();
+      s.addRange(r);
+      btn.textContent = 'Đã bôi đen — bấm Cmd+C';
+    }
+
+    var hint = document.createElement('p');
+    hint.className = 'hint';
+    hint.textContent = 'Sau khi copy, dán mã vào công cụ để đổi lấy access token.';
+    out.appendChild(hint);
+
   } else {
-    out.innerHTML = '<p>Trang này nhận mã uỷ quyền sau khi bạn cho phép ứng dụng ' +
-      'trên TikTok. Mở trực tiếp sẽ không thấy gì.</p>';
+    var d = document.createElement('p');
+    d.textContent = 'Trang này nhận mã uỷ quyền sau khi bạn cho phép ứng dụng ' +
+      'trên TikTok. Mở trực tiếp sẽ không thấy gì.';
+    out.appendChild(d);
   }
 </script>
 </body></html>
